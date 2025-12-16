@@ -14,8 +14,9 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
 });
 
-// Placeholder for routes
-// app.use('/api', apiRoutes);
+import apiRoutes from './routes/api';
+
+app.use('/api', apiRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
