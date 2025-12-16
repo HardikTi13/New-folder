@@ -76,4 +76,20 @@ export class BookingController {
             res.status(400).json({ error: error.message || 'Booking failed' });
         }
     }
+    // GET /api/bookings?userId=... (or empty for all if admin)
+    static async getBookings(req: Request, res: Response) {
+        try {
+            const { userId } = req.query;
+            const where = userId ? { userId: userId as string } : {};
+
+            const bookings = await prisma.booking.findMany({
+                where,
+                include: { court: true, coach: true },
+                orderBy: { date: 'desc' }
+            });
+            res.json(bookings);
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to fetch bookings' });
+        }
+    }
 }

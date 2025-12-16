@@ -7,4 +7,6 @@ router.get('/config', BookingController.getConfig);
 router.get('/availability', BookingController.getAvailability);
 router.post('/bookings', BookingController.createBooking);
 
+router.get('/bookings', BookingController.getBookings);
+
 export default router;

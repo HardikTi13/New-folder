@@ -23,5 +23,12 @@ export const api = {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Booking failed');
         return json;
+    },
+
+    getBookings: async (userId?: string) => {
+        const query = userId ? `?userId=${userId}` : '';
+        const res = await fetch(`${API_URL}/bookings${query}`);
+        if (!res.ok) throw new Error('Failed to fetch bookings');
+        return res.json();
     }
 };
