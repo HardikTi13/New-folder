@@ -1,0 +1,17 @@
+{
+  "name": "badminton-booking-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "build": "npm run build --prefix client && npm run build --prefix server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

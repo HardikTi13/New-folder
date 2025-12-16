@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Court {
+  id        String   @id @default(uuid())
+  name      String
+  type      CourtType
+  basePrice Float
+  bookings  Booking[]
+}
+
+model Equipment {
+  id    String @id @default(uuid())
+  name  String
+  stock Int
+  price Float
+}
+
+model Coach {
+  id         String   @id @default(uuid())
+  name       String
+  hourlyRate Float
+  bookings   Booking[]
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  userId      String   // Placeholder for user system
+  courtId     String
+  court       Court    @relation(fields: [courtId], references: [id])
+  coachId     String?
+  coach       Coach?   @relation(fields: [coachId], references: [id])
+  date        DateTime
+  startTime   Int      // Hour of day (0-23)
+  endTime     Int
+  totalPrice  Float
+  equipment   Json?    // Store equipment details {items: [{id, quantity}]}
+  createdAt   DateTime @default(now())
+}
+
+model PricingRule {
+  id        String   @id @default(uuid())
+  name      String
+  type      RuleType
+  value     Float
+  condition String   // JSON string for conditions (e.g. {days: [0,6]} for weekend)
+}
+
+enum CourtType {
+  INDOOR
+  OUTDOOR
+}
+
+enum RuleType {
+  MULTIPLIER
+  FIXED_ADD
+}
