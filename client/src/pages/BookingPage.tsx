@@ -152,7 +152,7 @@ export default function BookingPage() {
             />
             <div className="grid grid-cols-4 gap-2 w-full">
               {slots.map(slot => {
-                 const slotAvail = availability[slot];
+
                  // Check if ANY court is free? No, check if SPECIFIC court is free is later.
                  // Here we show generic availability? Or just let them pick slot and filter courts?
                  // Let's assume slots are clickable always, courts disable if booked.
