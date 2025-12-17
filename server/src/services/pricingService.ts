@@ -28,10 +28,12 @@ export class PricingService {
 
         for (const rule of rules) {
             const condition = JSON.parse(rule.condition);
-            let applies = false;
+            let applies = true;
 
-            if (rule.name === 'Weekend' && isWeekend) applies = true;
-            if (rule.name === 'Peak Hour' && condition.hours.includes(slot)) applies = true;
+            if (condition.days && !condition.days.includes(dayOfWeek)) applies = false;
+            // Handle day ranges if needed, but array is safer
+            if (condition.hours && !condition.hours.includes(slot)) applies = false;
+            if (condition.courtType && condition.courtType !== court.type) applies = false;
 
             if (applies) {
                 if (rule.type === RuleType.MULTIPLIER) {

@@ -13,6 +13,7 @@ model Court {
   type      CourtType
   basePrice Float
   bookings  Booking[]
+  waitlist  Waitlist[]
 }
 
 model Equipment {
@@ -60,4 +61,14 @@ enum CourtType {
 enum RuleType {
   MULTIPLIER
   FIXED_ADD
+}
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  userId    String
+  courtId   String
+  court     Court    @relation(fields: [courtId], references: [id])
+  date      DateTime
+  startTime Int
+  createdAt DateTime @default(now())
 }

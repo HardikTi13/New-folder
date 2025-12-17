@@ -113,6 +113,26 @@ export default function BookingPage() {
     }
   };
 
+  const handleWaitlist = async () => {
+     if (!selectedCourt || !selectedSlot || !date) return;
+     try {
+       await api.joinWaitlist({
+         userId: 'demo-user',
+         courtId: selectedCourt,
+         date: date,
+         slot: selectedSlot
+       });
+       alert('Added to Waitlist!');
+       setSelectedSlot(null);
+       setSelectedCourt(null);
+     } catch (err: any) {
+        alert(err.message);
+     }
+  };
+
+  const isSelectedCourtBooked = selectedSlot && selectedCourt && availability[selectedSlot]?.bookedCourtIds.includes(selectedCourt);
+
+
   if(!date) return <div>Select Date</div>;
 
   return (
@@ -162,7 +182,7 @@ export default function BookingPage() {
               return (
                 <button
                   key={court.id}
-                  disabled={!selectedSlot || !!isBooked}
+                  disabled={!selectedSlot}
                   className={cn(
                     "p-4 border rounded-lg text-left transition-all hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed",
                     selectedCourt === court.id ? "border-primary bg-primary/5 ring-1 ring-primary" : ""
@@ -269,8 +289,13 @@ export default function BookingPage() {
               </div>
             </div>
 
-            <Button className="w-full" size="lg" disabled={!selectedSlot || !selectedCourt} onClick={handleBooking}>
-              Confirm Booking
+            <Button 
+              className={cn("w-full", isSelectedCourtBooked ? "bg-orange-500 hover:bg-orange-600" : "")} 
+              size="lg" 
+              disabled={!selectedSlot || !selectedCourt} 
+              onClick={isSelectedCourtBooked ? handleWaitlist : handleBooking}
+            >
+              {isSelectedCourtBooked ? "Join Waitlist" : "Confirm Booking"}
             </Button>
           </CardContent>
         </Card>

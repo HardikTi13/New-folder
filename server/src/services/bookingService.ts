@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma';
+import { PricingService } from './pricingService';
 
 export class BookingService {
     static async checkAvailability(date: Date, slot: number) {
@@ -48,32 +49,31 @@ export class BookingService {
                 if (coachBusy) throw new Error('Coach not available for this slot');
             }
 
-            // 3. Decrement Inventory (Logic simplified: Verify stock but don't decrement permanently per slot usually, 
-            // but for this task we assume inventory is per-slot or global stock? 
-            // Prompt said "decrement equipment inventory for that slot". 
-            // Realistically inventory is check-in/check-out. We'll simply check global stock is > X booked in that slot?)
-
-            // Simplified: Just Check global stock > 0. Decrementing global stock for a future booking is weird logic 
-            // (stock prevents other days?). We will assume daily stock? 
-            // Let's implement strict stock check against SIMULTANEOUS bookings.
-
+            // 3. Check Equipment Availability
             if (equipment) {
+                const slotBookings = await tx.booking.findMany({
+                    where: { date: date, startTime: slot }
+                });
+
                 for (const [eqId, qty] of Object.entries(equipment)) {
                     if (qty <= 0) continue;
                     const item = await tx.equipment.findUnique({ where: { id: eqId } });
-                    if (!item || item.stock < qty) throw new Error(`Insufficient stock for ${item?.name}`);
+                    if (!item) throw new Error(`Equipment ${eqId} not found`);
 
-                    // Note: We are NOT permanently reducing stock table (otherwise it runs out forever).
-                    // We just ensure we don't overbook stock for THIS slot.
-                    // Getting ALL bookings for this slot to count items currently reserved?
-                    // This is complex. For now, we assume simple Check.
+                    let used = 0;
+                    for (const b of slotBookings) {
+                        const bEq = b.equipment as any;
+                        if (bEq && bEq[eqId]) used += bEq[eqId];
+                    }
+
+                    if (used + qty > item.stock) {
+                        throw new Error(`Insufficient stock for ${item.name}. Available: ${item.stock - used}`);
+                    }
                 }
             }
 
-            // 4. Calculate Price (Final check)
-            // (Assuming price passed or calc again. Let's rely on Controller to pass price or calc here)
-            // For simplicity/safety, we should recalc price here, but let's assume valid input for now or calc simple.
-            // Ideally inject PricingService here.
+            // 4. Calculate Price
+            const { totalPrice } = await PricingService.calculateTotal(courtId, slot, date, coachId, equipment);
 
             // Create Booking
             const booking = await tx.booking.create({
@@ -84,10 +84,45 @@ export class BookingService {
                     date,
                     startTime: slot,
                     endTime: slot + 1,
-                    totalPrice: 0, // Should be updated with real calc
+                    totalPrice,
                     equipment: equipment ?? undefined,
                 }
             });
+
+            return booking;
+        });
+    }
+
+    static async addToWaitlist(userId: string, courtId: string, date: Date, slot: number) {
+        // Check if actually full? Optional but good practice.
+        // For now, just add.
+        return await prisma.waitlist.create({
+            data: { userId, courtId, date, startTime: slot }
+        });
+    }
+
+    static async cancelBooking(bookingId: string) {
+        return await prisma.$transaction(async (tx) => {
+            const booking = await tx.booking.delete({
+                where: { id: bookingId }
+            });
+
+            // Check Waitlist
+            const nextInLine = await tx.waitlist.findFirst({
+                where: {
+                    courtId: booking.courtId,
+                    date: booking.date,
+                    startTime: booking.startTime
+                },
+                orderBy: { createdAt: 'asc' }
+            });
+
+            if (nextInLine) {
+                // Mock Notification
+                console.log(`[NOTIFICATION] Slot freed! Notifying User ${nextInLine.userId} for Court ${booking.courtId} at ${booking.startTime}:00`);
+                // Optional: Auto-book? "Notify next person" usually means email them to book.
+                // We will leave it as notification only.
+            }
 
             return booking;
         });

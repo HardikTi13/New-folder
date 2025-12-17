@@ -18,7 +18,7 @@ export function Navbar() {
           <Link to="/admin">
             <Button variant="ghost">Admin</Button>
           </Link>
-          <Button>Login</Button>
+
         </div>
       </div>
     </nav>

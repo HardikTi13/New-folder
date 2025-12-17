@@ -42,15 +42,8 @@ export class BookingController {
     static async createBooking(req: Request, res: Response) {
         try {
             const { userId, courtId, date, slot, coachId, equipment } = req.body;
-
             const bookingDate = new Date(date);
 
-            // 1. Calculate Price Again (Server-side validation)
-            const { totalPrice, breakdown } = await PricingService.calculateTotal(
-                courtId, slot, bookingDate, coachId, equipment
-            );
-
-            // 2. Create Booking
             const booking = await BookingService.createBooking(
                 userId || 'guest',
                 courtId,
@@ -60,20 +53,37 @@ export class BookingController {
                 equipment
             );
 
-            // 3. Update price in DB (since createBooking set it to 0 initially in my simplified service)
-            // Actually detailed PricingService integration inside BookingService.createBooking is better design, 
-            // but for now updating it after or passing it in is fine.
-            // Let's update it.
-            await prisma.booking.update({
-                where: { id: booking.id },
-                data: { totalPrice }
-            });
-
-            res.json({ success: true, booking, totalPrice, breakdown });
-
+            res.json({ success: true, booking });
         } catch (error: any) {
             console.error(error);
             res.status(400).json({ error: error.message || 'Booking failed' });
+        }
+    }
+
+    // POST /api/waitlist
+    static async joinWaitlist(req: Request, res: Response) {
+        try {
+            const { userId, courtId, date, slot } = req.body;
+            const waitlistEntry = await BookingService.addToWaitlist(
+                userId || 'guest',
+                courtId,
+                new Date(date),
+                slot
+            );
+            res.json({ success: true, waitlistEntry });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // DELETE /api/bookings/:id
+    static async cancelBooking(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            await BookingService.cancelBooking(id);
+            res.json({ success: true });
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
         }
     }
     // GET /api/bookings?userId=... (or empty for all if admin)
